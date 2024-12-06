@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
 
 declare -r CLIENT=$1
