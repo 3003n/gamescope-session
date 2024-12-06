@@ -13,7 +13,18 @@ CPU_MODEL=$(cat /proc/cpuinfo | grep "model name" | head -n 1 | cut -d : -f 2 | 
 # CPU_VENDOR="$(lscpu | grep "Vendor ID" | cut -d : -f 2 | xargs)"
 
 SCRIPTS_DIR="/usr/share/gamescope/scripts/"
-SCRIPTS_DISPLAY_DIR="${SCRIPTS_DIR}/00-gamescope/displays"
+
+function lua_not_exists() {
+  # 返回值 1:存在 0:不存在
+  local dir=${2:-$SCRIPTS_DIR}
+  local file=$1
+  files=$(find $dir -name $file -type f 2>/dev/null)
+  if [ -n "$files" ]; then
+    return 1
+  else
+    return 0
+  fi
+}
 
 # OXP 60Hz Devices
 OXP_LIST="ONE XPLAYER:ONEXPLAYER 1 T08:ONEXPLAYER 1S A08:ONEXPLAYER 1S T08:ONEXPLAYER mini A07:ONEXPLAYER mini GA72:ONEXPLAYER mini GT72:ONEXPLAYER Mini Pro:ONEXPLAYER GUNDAM GA72:ONEXPLAYER 2 ARP23:ONEXPLAYER 2 PRO ARP23H:ONEXPLAYER 2 PRO ARP23P:ONEXPLAYER 2 PRO ARP23P EVA-01"
@@ -140,7 +151,7 @@ fi
 
 #GPD Win 4 supports 40-60hz refresh rate changing
 if [[ ":G1618-04:" =~ ":$SYS_ID:"  ]]; then
-  if [[ ! -f "${SCRIPTS_DISPLAY_DIR}/gpd.win4.lcd.lua" ]]; then
+  if lua_not_exists "gpd.win4.lcd.lua"; then
       CUSTOM_REFRESH_RATES=40-60
   fi
   export STEAM_DISPLAY_REFRESH_LIMITS=40,60
@@ -177,13 +188,15 @@ if [[ ":G1617-01:" =~ ":$SYS_ID:"  ]]; then
   if [[ "$model_name" == "MINI" ]] || ( xrandr --prop 2>$1 | grep -e "1080x1920 " > /dev/null ) ; then
     # model_name is "MINI"
     ORIENTATION=right
-    DRM_MODE=custom
-    DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
+    if lua_not_exists "gpd.winmini.lcd.lua"; then
+        DRM_MODE=custom
+        DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
+    fi
   else
     # model_name is "TL070FVXS01-0"
     ADAPTIVE_SYNC=1
     ORIENTATION=normal
-    if [[ ! -f "${SCRIPTS_DISPLAY_DIR}/asus.rogally.lcd.lua" || "$model_name" == "" ]]; then
+    if [[ "$model_name" == "" ]] || lua_not_exists "asus.rogally.lcd.lua"; then
         CUSTOM_REFRESH_RATES="60,70,80,90,100,110,120"
     fi
   fi
@@ -253,7 +266,7 @@ if [[ ":$ALLY_LIST:" =~ ":$SYS_ID:"  ]]; then
   # PANEL_TYPE=external
   ADAPTIVE_SYNC=1
   # CUSTOM_REFRESH_RATES=60,70,80,90,100,110,120
-  if [[ ! -f "${SCRIPTS_DISPLAY_DIR}/asus.rogally.lcd.lua" || "$model_name" == "" ]]; then
+  if lua_not_exists "asus.rogally.lcd.lua" || "$model_name" == ""; then
       CUSTOM_REFRESH_RATES="60,70,80,90,100,110,120"
   fi
 
@@ -264,7 +277,7 @@ fi
 # Lenovo Legion Go
 if [[ ":83E1:" =~ ":$SYS_ID:"  ]]; then
   ORIENTATION=left
-  if [[ ! -f "${SCRIPTS_DISPLAY_DIR}/lenovo.legiongo.lcd.lua" ]]; then
+  if lua_not_exists "lenovo.legiongo.lcd.lua"; then
       CUSTOM_REFRESH_RATES=60,90,120,144
   fi
 
