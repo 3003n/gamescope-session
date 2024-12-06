@@ -11,7 +11,7 @@ declare -r CLIENT_CONFIG_DIR_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/gamescope-
 
 # default empty session recovery function
 short_session_recover() {
-	:
+    :
 }
 
 # default empty function to run after gamescope is started
@@ -21,7 +21,7 @@ post_gamescope_start() {
 
 # default empty function to run after client exits
 post_client_shutdown() {
-	:
+    :
 }
 
 get_gamescope_binary() {
@@ -36,11 +36,11 @@ get_gamescope_binary() {
 }
 
 gamescope_has_option() {
-	if ($(get_gamescope_binary) --help 2>&1 | grep -e "$1" > /dev/null); then
-		return 0
-	fi
+    if ($(get_gamescope_binary) --help 2>&1 | grep -e "$1" > /dev/null); then
+        return 0
+    fi
 
-	return 1
+    return 1
 }
 
 # Fix intel color corruption
@@ -122,22 +122,35 @@ ulimit -n 524288
 
 # Source device quirks if exists
 if [ -f /usr/share/gamescope-session-plus/device-quirks ]; then
-	. /usr/share/gamescope-session-plus/device-quirks
+    . /usr/share/gamescope-session-plus/device-quirks
 fi
 
 # Source client app specific configuration files
 set -a
 for i in ${CLIENT_CONFIG_DIR_USR}/${CLIENT} ${CLIENT_CONFIG_DIR_ETC}/${CLIENT} ${CLIENT_CONFIG_DIR_LOCAL}/${CLIENT}; do
-	[[ -f "${i}" ]] && . "${i}"
+    [[ -f "${i}" ]] && . "${i}"
 done
 set +a
 
 # Source user configuration from ~/.config/environment.d
 set -a
 for i in "${HOME}"/.config/environment.d/*.conf; do
-	[[ -f "${i}" ]] && . "${i}"
+    [[ -f "${i}" ]] && . "${i}"
 done
 set +a
+
+# Setup background
+product_name=$(cat /sys/class/dmi/id/product_name)
+galileo_background=/usr/share/plymouth/themes/steamos/steamos-galileo.png
+jupiter_background=/usr/share/plymouth/themes/steamos/steamos-jupiter.png
+if [[ $product_name = "Galileo" && -f $galileo_background ]]; then
+    ui_background=$galileo_background
+elif [[ -f $jupiter_background ]]; then
+    ui_background=$jupiter_background
+fi
+if [[ -n $ui_background ]]; then
+    export STEAM_UPDATEUI_PNG_BACKGROUND=${STEAM_UPDATEUI_PNG_BACKGROUND:-$ui_background}
+fi
 
 # Setup socket for gamescope
 # Create run directory file for startup and stats sockets
@@ -146,8 +159,8 @@ socket="${tmpdir:+$tmpdir/startup.socket}"
 stats="${tmpdir:+$tmpdir/stats.pipe}"
 # Fail early if we don't have a proper runtime directory setup
 if [[ -z $tmpdir || -z ${XDG_RUNTIME_DIR+x} ]]; then
-	echo >&2 "!! Failed to find run directory in which to create stats session sockets (is \$XDG_RUNTIME_DIR set?)"
-	exit 0
+    echo >&2 "!! Failed to find run directory in which to create stats session sockets (is \$XDG_RUNTIME_DIR set?)"
+    exit 0
 fi
 
 export GAMESCOPE_STATS="$stats"
@@ -161,67 +174,153 @@ sessionlink="${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/}${linkname}" # Account for XDG
 lockfile="$sessionlink".lck
 exec 9>"$lockfile" # Keep as an fd such that the lock lasts as long as the session if it is taken
 if flock -n 9 && rm -f "$sessionlink" && ln -sf "$tmpdir" "$sessionlink"; then
-	# Took the lock.  Don't blow up if those commands fail, though.
-	echo >&2 "Claimed global gamescope stats session at \"$sessionlink\""
+    # Took the lock.  Don't blow up if those commands fail, though.
+    echo >&2 "Claimed global gamescope stats session at \"$sessionlink\""
 else
-	echo >&2 "!! Failed to claim global gamescope stats session"
+    echo >&2 "!! Failed to claim global gamescope stats session"
 fi
 
-if [ -z "$GAMESCOPECMD" ]; then
-	# Set default values
-	: "${OUTPUT_CONNECTOR:=*,eDP-1}"
-	: "${XWAYLAND_COUNT:=2}"
-	: "${TOUCH_MODE:=4}"
-	: "${HIDE_CURSOR_DELAY_MS:=3000}"
-	: "${FADE_OUT_DURATION_MS:=200}"
+if [ -z "$GAMESCOPECMD" ] ; then
+    # Set default values
+    : "${DRM_MODE:=fixed}"
+    : "${OUTPUT_CONNECTOR:=*,eDP-1}"
+    : "${XWAYLAND_COUNT:=2}"
+    : "${TOUCH_MODE:=4}"
+    : "${HIDE_CURSOR_DELAY_MS:=3000}"
+    : "${FADE_OUT_DURATION_MS:=200}"
+    # --tap-to-click
+    : "${GAMESCOPE_TAP_TO_CLICK:=1}"
+    # --tap-and-drag
+    # : "${GAMESCOPE_TAP_AND_DRAG:=1}"
+    # --drag-lock
+    # : "${GAMESCOPE_TAP_DRAG_LOCK:=}"
+    
+    # --natural-scrolling xxx
+    # Natural scrolling for pointer devices
+    # none => No pointer device
+    # touchpad => Only for touchpad
+    # mouse => Only for mouse
+    # all => All pointer device
+    : "${GAMESCOPE_NATURAL_SCROLL:=touchpad}"
 
-	CURSOR=""
-	if [ -f "$CURSOR_FILE" ]; then
-		# Use specified cursor if file exists
-		CURSOR="--cursor ${CURSOR_FILE}"
-	fi
+    CURSOR=""
+    if [ -f "$CURSOR_FILE" ]; then
+        # Use specified cursor if file exists
+        CURSOR="--cursor ${CURSOR_FILE}"
+    fi
 
-	RESOLUTION=""
+    RESOLUTION=""
 	if [ -n "$SCREEN_WIDTH" ] && [ -n "$SCREEN_HEIGHT" ]; then
-		RESOLUTION="-W $SCREEN_WIDTH -H $SCREEN_HEIGHT"
-	fi
+        RESOLUTION="-W $SCREEN_WIDTH -H $SCREEN_HEIGHT"
+    fi
 
-	INTERNAL_RESOLUTION=""
-	if [ -n "$INTERNAL_WIDTH" ] && [ -n "$INTERNAL_HEIGHT" ] ; then
-		INTERNAL_RESOLUTION="-w $INTERNAL_WIDTH -h $INTERNAL_HEIGHT"
-	fi
+    INTERNAL_RESOLUTION=""
+    if [ -n "$INTERNAL_WIDTH" ] && [ -n "$INTERNAL_HEIGHT" ] ; then
+        INTERNAL_RESOLUTION="-w $INTERNAL_WIDTH -h $INTERNAL_HEIGHT"
+    fi
 
-	DRM_MODE_OPTION=""
-	if [ -n "$DRM_MODE" ] ; then
-		DRM_MODE_OPTION="--generate-drm-mode $DRM_MODE"
-	fi
+    DRM_MODE_OPTION=""
+    if [ -n "$DRM_MODE" ] ; then
+        DRM_MODE_OPTION="--generate-drm-mode $DRM_MODE"
+    fi
 
-	ORIENTATION_OPTION=""
-	if [ -n "$ORIENTATION" ] ; then
-		ORIENTATION_OPTION="--force-orientation $ORIENTATION"
-	fi
+    ORIENTATION_OPTION=""
+    if [ -n "$ORIENTATION" ] ; then
+        ORIENTATION_OPTION="--force-orientation $ORIENTATION"
+    fi
 
-	ADAPTIVE_SYNC_OPTION=""
-	if [ -n "$ADAPTIVE_SYNC" ]; then
-		ADAPTIVE_SYNC_OPTION="--adaptive-sync"
-	fi
+    ADAPTIVE_SYNC_OPTION=""
+    if [ -n "$ADAPTIVE_SYNC" ]; then
+        ADAPTIVE_SYNC_OPTION="--adaptive-sync"
+    fi
 
-	PANEL_TYPE_OPTION=""
-	if [ -n "$PANEL_TYPE" ] && gamescope_has_option "--force-panel-type"; then
-		PANEL_TYPE_OPTION="--force-panel-type $PANEL_TYPE"
-	fi
+    PANEL_TYPE_OPTION=""
+    if [ -n "$PANEL_TYPE" ] && gamescope_has_option "--force-panel-type"; then
+        PANEL_TYPE_OPTION="--force-panel-type $PANEL_TYPE"
+    fi
 
-	CUSTOM_REFRESH_RATES_OPTION=""
-	if [ -n "$CUSTOM_REFRESH_RATES" ] && gamescope_has_option "--custom-refresh-rates"; then
-		CUSTOM_REFRESH_RATES_OPTION="--custom-refresh-rates $CUSTOM_REFRESH_RATES"
-	fi
+	BYPASS_STEAM_RESOLUTION_OPTION=""
+    if [ -n "$BYPASS_STEAM_RESOLUTION" ] && gamescope_has_option "--bypass-steam-resolution"; then
+        BYPASS_STEAM_RESOLUTION_OPTION="--bypass-steam-resolution"
+    fi
 
-	BACKEND_OPTION=""
+    CUSTOM_REFRESH_RATES_OPTION=""
+    if [ -n "$CUSTOM_REFRESH_RATES" ] && gamescope_has_option "--custom-refresh-rates"; then
+        CUSTOM_REFRESH_RATES_OPTION="--custom-refresh-rates $CUSTOM_REFRESH_RATES"
+    fi
+
+    BACKEND_OPTION=""
 	# Check if an older GPU that needs the SDL workaround is in use.
 	if [ -n "$BACKEND" ] && gamescope_has_option "--backend"; then
 		BACKEND_OPTION="--backend $BACKEND"
 	fi
 
+    TAP_TO_CLICK_OPTION=""
+    if [ -n "$GAMESCOPE_TAP_TO_CLICK" ] && gamescope_has_option "--tap-to-click"; then
+        TAP_TO_CLICK_OPTION="--tap-to-click"
+    fi
+
+    TAP_AND_DRAG_OPTION=""
+    if [ -n "$GAMESCOPE_TAP_AND_DRAG" ] && gamescope_has_option "--tap-and-drag"; then
+        TAP_AND_DRAG_OPTION="--tap-and-drag"
+    fi
+
+    TAP_DRAG_LOCK_OPTION=""
+    if [ -n "$GAMESCOPE_TAP_DRAG_LOCK" ] && gamescope_has_option "--drag-lock"; then
+        TAP_DRAG_LOCK_OPTION="--drag-lock"
+    fi
+
+    MIDDLE_EMULATION_OPTION=""
+    if [ -n "$GAMESCOPE_MIDDLE_EMULATION" ] && gamescope_has_option "--middle-emulation"; then
+        MIDDLE_EMULATION_OPTION="--middle-emulation"
+    fi
+
+    LEFT_HANDED_OPTION=""
+    if [ -n "$GAMESCOPE_LEFT_HANDED" ] && gamescope_has_option "--left-handed"; then
+        LEFT_HANDED_OPTION="--left-handed"
+    fi
+
+    DISABLE_WHILE_TYPING_OPTION=""
+    if [ -n "$GAMESCOPE_DISABLE_WHILE_TYPING" ] && gamescope_has_option "--disable-while-typing"; then
+        DISABLE_WHILE_TYPING_OPTION="--disable-while-typing"
+    fi
+
+    DISABLE_WHILE_TRACKPOINTING_OPTION=""
+    if [ -n "$GAMESCOPE_DISABLE_WHILE_TRACKPOINTING" ] && gamescope_has_option "--disable-while-trackpointing"; then
+        DISABLE_WHILE_TRACKPOINTING_OPTION="--disable-while-trackpointing"
+    fi
+
+    NATURAL_SCROLL_OPTION=""
+    if [ -n "$GAMESCOPE_NATURAL_SCROLL" ] && gamescope_has_option "--natural-scrolling"; then
+        NATURAL_SCROLL_OPTION="--natural-scrolling $GAMESCOPE_NATURAL_SCROLL"
+    fi
+
+    POINTER_ACCEL_PROFILE_OPTION=""
+    if [ -n "$GAMESCOPE_POINTER_ACCEL_PROFILE" ] && gamescope_has_option "--pointer-accel-profile"; then
+        POINTER_ACCEL_PROFILE_OPTION="--pointer-accel-profile $GAMESCOPE_POINTER_ACCEL_PROFILE"
+    fi
+
+    POINTER_ACCEL_SPEED_OPTION=""
+    if [ -n "$GAMESCOPE_POINTER_ACCEL_SPEED" ] && gamescope_has_option "--pointer-accel-speed"; then
+        POINTER_ACCEL_SPEED_OPTION="--pointer-accel-speed $GAMESCOPE_POINTER_ACCEL_SPEED"
+    fi
+
+    TOUCH_GESTURES_OPTION=""
+    if [ -n "$GAMESCOPE_TOUCH_GESTURES" ] && gamescope_has_option "--touch-gestures"; then
+        TOUCH_GESTURES_OPTION="--touch-gestures"
+    fi
+
+    DRM_MODE_CUSTOM_DIR_OPTION=""
+    if [[ -n "$DRM_MODE_CUSTOM_DIR" && -d "$DRM_MODE_CUSTOM_DIR" ]]; then
+        if gamescope_has_option "--generate-drm-mode-custom-dir"; then
+            DRM_MODE="custom"
+            DRM_MODE_CUSTOM_DIR_OPTION="--generate-drm-mode-custom-dir $DRM_MODE_CUSTOM_DIR"
+        else
+            DRM_MODE="fixed"
+            DRM_MODE_CUSTOM_DIR_OPTION=""
+        fi
+    fi
+    
   HDR_OPTIONS=""
   if [ "$ENABLE_GAMESCOPE_HDR" == "1" ] && [ "$ENABLE_GAMESCOPE_WSI" == "1" ] && gamescope_has_option "--hdr-enabled" && gamescope_has_option "--hdr-itm-enable"; then
     HDR_OPTIONS="--hdr-enabled --hdr-itm-enable"
@@ -233,23 +332,35 @@ if [ -z "$GAMESCOPECMD" ]; then
     HDR_OPTIONS="$HDR_OPTIONS --hdr-itm-sdr-nits $GAMESCOPE_HDR_NITS --hdr-sdr-content-nits $GAMESCOPE_HDR_NITS"
   fi
 
-	GAMESCOPECMD="$(get_gamescope_binary) \
-		$CURSOR \
-		$RESOLUTION \
-		$INTERNAL_RESOLUTION \
-		$ORIENTATION_OPTION \
-		$DRM_MODE_OPTION \
-		$ADAPTIVE_SYNC_OPTION \
-		$PANEL_TYPE_OPTION \
-		$CUSTOM_REFRESH_RATES_OPTION \
-		$BACKEND_OPTION \
+    GAMESCOPECMD="$(get_gamescope_binary) \
+        $CURSOR \
+        $RESOLUTION \
+        $INTERNAL_RESOLUTION \
+        $ORIENTATION_OPTION \
+        $DRM_MODE_OPTION $DRM_MODE_CUSTOM_DIR_OPTION \
+        $BYPASS_STEAM_RESOLUTION_OPTION \
+        $ADAPTIVE_SYNC_OPTION \
+        $PANEL_TYPE_OPTION \
+        $CUSTOM_REFRESH_RATES_OPTION \
+        $BACKEND_OPTION \
 		$HDR_OPTIONS \
-		--prefer-output $OUTPUT_CONNECTOR \
-		--xwayland-count $XWAYLAND_COUNT \
-		--default-touch-mode $TOUCH_MODE \
-		--hide-cursor-delay $HIDE_CURSOR_DELAY_MS \
-		--fade-out-duration $FADE_OUT_DURATION_MS \
-		--steam"
+        --prefer-output $OUTPUT_CONNECTOR \
+        --xwayland-count $XWAYLAND_COUNT \
+        --default-touch-mode $TOUCH_MODE \
+        --hide-cursor-delay $HIDE_CURSOR_DELAY_MS \
+        --fade-out-duration $FADE_OUT_DURATION_MS \
+        --steam \
+        $TAP_TO_CLICK_OPTION \
+        $TAP_AND_DRAG_OPTION \
+        $TAP_DRAG_LOCK_OPTION \
+        $MIDDLE_EMULATION_OPTION \
+        $LEFT_HANDED_OPTION \
+        $DISABLE_WHILE_TYPING_OPTION \
+        $DISABLE_WHILE_TRACKPOINTING_OPTION \
+        $NATURAL_SCROLL_OPTION \
+        $POINTER_ACCEL_PROFILE_OPTION \
+        $POINTER_ACCEL_SPEED_OPTION \
+        $TOUCH_GESTURES_OPTION"
 fi
 
 # Add socket and stats read
@@ -257,7 +368,7 @@ GAMESCOPECMD+=" -R $socket -T $stats"
 
 # Add custom vulkan adapter if specified
 if [ -n "$VULKAN_ADAPTER" ]; then
-	GAMESCOPECMD+=" --prefer-vk-device $VULKAN_ADAPTER"
+    GAMESCOPECMD+=" --prefer-vk-device $VULKAN_ADAPTER"
 fi
 
 # Attempt to fallback to a desktop session if something goes wrong too many times
@@ -266,32 +377,68 @@ short_session_duration=60
 short_session_count_before_reset=5
 SECONDS=0
 
+session_retry_duration=25
+gamescope_retry_duration=10
+
 short_session_count=$(wc <"$short_session_tracker_file" -l)
 
 if [[ "$short_session_count" -ge "$short_session_count_before_reset" ]]; then
-	echo >&2 "gamescope-session-plus: detected broken ${CLIENT} or gamescope failure, will try to reset the session"
+    echo >&2 "gamescope-session-plus: detected broken ${CLIENT} or gamescope failure, will try to reset the session"
 
-	short_session_recover
+    short_session_recover
 
-	# rearm
-	rm "$short_session_tracker_file"
-	exit 1
+    # rearm
+    rm "$short_session_tracker_file"
+    exit 1
 fi
 
-# Start gamescope compositor and background it
-$GAMESCOPECMD &
+# Log rotate the last session
+if [ -f "${HOME}"/.${CLIENT}-stdout.log ]; then
+    cp "${HOME}"/.${CLIENT}-stdout.log "${HOME}"/.${CLIENT}-stdout.log.old
+fi
+if [ -f "${HOME}"/.gamescope-stdout.log ]; then
+    cp "${HOME}"/.gamescope-stdout.log "${HOME}"/.gamescope-stdout.log.old
+fi
+if [ -f "${HOME}"/.gamescope-cmd.log ]; then
+    cp "${HOME}"/.gamescope-cmd.log "${HOME}"/.gamescope-cmd.log.old
+fi
+
+# renice log
+if [ -f "${HOME}"/.renice-steam.log ]; then
+    cp "${HOME}"/.renice-steam.log "${HOME}"/.renice-steam.log.old
+fi
+
+# Start gamescope compositor, log it's output and background it
+echo $GAMESCOPECMD >"${HOME}"/.gamescope-cmd.log
+$GAMESCOPECMD >"${HOME}"/.gamescope-stdout.log 2>&1 &
 gamescope_pid="$!"
 
-if read -r -t 3 response_x_display response_wl_display <>"$socket"; then
-	export DISPLAY="$response_x_display"
-	export GAMESCOPE_WAYLAND_DISPLAY="$response_wl_display"
-	# We're done!
+# auto pkill to retry gamescope
+while true; do
+    if [[ "$SECONDS" -lt "$gamescope_retry_duration" ]]; then
+        echo ">>>>> SECONDS[$SECONDS], pidof gamescope [$(pidof gamescope 2>/dev/null)]" >>"${HOME}/.gamescope-stdout.log"
+    fi
+    if [[ "$SECONDS" -gt "$gamescope_retry_duration" ]]; then 
+        if [[ -z "$(pidof steam 2>/dev/null)" && -z "$(pidof opengamepadui 2>/dev/null)" ]]; then
+            echo ">>>>>> pkill gamescope" >>"${HOME}/.gamescope-stdout.log"
+            pkill -HUP gamescope
+        else
+            break
+        fi
+    fi
+    sleep 5
+done &
+
+if read -r -t 15 response_x_display response_wl_display <> "$socket"; then
+    export DISPLAY="$response_x_display"
+    export GAMESCOPE_WAYLAND_DISPLAY="$response_wl_display"
+    # We're done!
 else
 	echo "gamescope failed" >>"$short_session_tracker_file"
-	kill -9 "$gamescope_pid"
-	wait -n "$gamescope_pid"
-	exit 1
-	# Systemd or Session manager will have to restart session
+    kill -9 "$gamescope_pid"
+    wait -n "$gamescope_pid"
+    exit 1
+    # Systemd or Session manager will have to restart session
 fi
 
 # Run session defined hook
@@ -299,14 +446,14 @@ post_gamescope_start
 
 # Input method support if present
 if command -v /usr/bin/ibus-daemon >/dev/null; then
-	/usr/bin/ibus-daemon -d -r --panel=disable --emoji-extension=disable
+    /usr/bin/ibus-daemon -d -r --panel=disable --emoji-extension=disable
 fi
 
 # If we have mangoapp binary start it
 if command -v mangoapp >/dev/null; then
-	(while true; do
+    (while true; do
 		mangoapp
-	done) &
+    done) &
 fi
 
 # Handle Galileo Mura Correction
@@ -319,16 +466,45 @@ fi
 
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then
-	CLIENTCMD=$STEAMCMD
+    CLIENTCMD=$STEAMCMD
 fi
 
 # Start client application
-$CLIENTCMD
+$CLIENTCMD > "${HOME}/.${CLIENT}-stdout.log" 2>&1 &
+
+# auto pkill to retry session
+while true; do
+    if [[ "$SECONDS" -lt "$session_retry_duration" ]]; then
+        echo ">>>>> SECONDS[$SECONDS], pidof steam [$(pidof steam 2>/dev/null)], pidof opengamepadui [$(pidof opengamepadui 2>/dev/null)]" >>"${HOME}/.${CLIENT}-stdout.log"
+    fi
+    if [[ "$SECONDS" -gt "$session_retry_duration" ]]; then 
+        if [[ -z "$(pidof steam 2>/dev/null)" && -z "$(pidof opengamepadui 2>/dev/null)" ]]; then
+            echo ">>>>>> pkill gamescope and steam" >>"${HOME}/.${CLIENT}-stdout.log"
+            pkill -HUP gamescope && pkill -HUP steam
+        else
+            break
+        fi
+    fi
+    sleep 5
+done &
+
+if [[ "$CLIENTCMD" =~ "steam" ]]; then
+    if [[ -z "$(pidof steam 2>/dev/null)" ]]; then
+        sleep 1
+    fi
+    sleep 10
+    pkexec /usr/libexec/renice-steam > "${HOME}"/.renice-steam.log 2>&1
+fi
+
+# Wait for exit
+while [[ -n "$(pidof steam 2>/dev/null)" || -n "$(pidof opengamepadui 2>/dev/null)" ]]; do
+    sleep 1
+done
 
 if [[ "$SECONDS" -lt "$short_session_duration" ]]; then
 	echo "${CLIENT} failed" >>"$short_session_tracker_file"
 else
-	rm "$short_session_tracker_file"
+    rm "$short_session_tracker_file"
 fi
 
 post_client_shutdown
@@ -336,23 +512,27 @@ post_client_shutdown
 # When the client exits, kill gamescope nicely
 kill $gamescope_pid
 
+echo ">>>> 1 after kill $gamescope_pid" >> "${HOME}/.${CLIENT}-stdout.log"
+
 # Start a background sleep for five seconds because we don't trust it
 sleep 5 &
 sleep_pid="$!"
 
 # Catch reboot and powerof sentinels here
 if [[ -e "$REBOOT_SENTINEL" ]]; then
-	rm -f "$REBOOT_SENTINEL"
-	# rearm short session tracker
-	rm "$short_session_tracker_file"
-	reboot
+    rm -f "$REBOOT_SENTINEL"
+    # rearm short session tracker
+    rm "$short_session_tracker_file"
+    reboot
 fi
 if [[ -e "$SHUTDOWN_SENTINEL" ]]; then
-	rm -f "$SHUTDOWN_SENTINEL"
-	# rearm short session tracker
-	rm "$short_session_tracker_file"
-	poweroff
+    rm -f "$SHUTDOWN_SENTINEL"
+    # rearm short session tracker
+    rm "$short_session_tracker_file"
+    poweroff
 fi
+
+echo ">>>> 2 after kill $gamescope_pid" >> "${HOME}/.${CLIENT}-stdout.log"
 
 # Wait for gamescope or the sleep to finish for timeout purposes
 ret=0
@@ -360,19 +540,22 @@ wait -n $gamescope_pid $sleep_pid || ret=$?
 
 # If we get a SIGTERM/etc while waiting this happens.  Proceed to kill -9 everything but complain
 if [[ $ret = 127 ]]; then
-	echo >&2 "gamescope-session-plus: Interrupted while waiting on teardown, force-killing remaining tasks"
+    echo >&2 "gamescope-session-plus: Interrupted while waiting on teardown, force-killing remaining tasks"
 fi
 
 # Kill all remaining jobs and warn if unexpected things are in there (should be just sleep_pid, unless gamescope failed
 # to exit in time or we hit the interrupt case above)
 for job in $(jobs -p); do
-	# Warn about unexpected things
-	if [[ $ret != 127 && $job = "$gamescope_pid" ]]; then
-		echo >&2 "gamescope-session-plus: gamescope timed out while exiting, killing"
-	elif [[ $ret != 127 && $job != "$sleep_pid" ]]; then
-		echo >&2 "gamescope-session-plus: unexpected background pid $job at teardown: "
-		# spew some debug about it
-		ps -p "$job" >&2
-	fi
-	kill -9 "$job"
+    # Warn about unexpected things
+    if [[ $ret != 127 && $job = "$gamescope_pid" ]]; then
+        echo >&2 "gamescope-session-plus: gamescope timed out while exiting, killing"
+    elif [[ $ret != 127 && $job != "$sleep_pid" ]]; then
+        echo >&2 "gamescope-session-plus: unexpected background pid $job at teardown: "
+        # spew some debug about it
+        ps -p "$job" >&2
+    fi
+    kill -9 "$job"
 done
+
+
+echo ">>>> 3 end" >> "${HOME}/.${CLIENT}-stdout.log"
