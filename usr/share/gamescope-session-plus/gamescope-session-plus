@@ -24,6 +24,12 @@ post_client_shutdown() {
     :
 }
 
+before_client_start() {
+    if [ $(command -v sk-fix-games) ]; then
+        sk-fix-games || true
+    fi
+}
+
 get_gamescope_binary() {
 	if [ -n "$GAMESCOPE_BIN" ]; then
 		echo $GAMESCOPE_BIN
@@ -413,6 +419,8 @@ fi
 if [ -f "${HOME}"/.renice-steam.log ]; then
     cp "${HOME}"/.renice-steam.log "${HOME}"/.renice-steam.log.old
 fi
+
+before_client_start >>"${HOME}"/.gamescope-stdout.log 2>&1
 
 # Start gamescope compositor, log it's output and background it
 echo $GAMESCOPECMD >"${HOME}"/.gamescope-cmd.log
