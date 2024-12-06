@@ -219,6 +219,17 @@ if [ -z "$GAMESCOPECMD" ] ; then
         INTERNAL_RESOLUTION="-w $INTERNAL_WIDTH -h $INTERNAL_HEIGHT"
     fi
 
+    DRM_MODE_CUSTOM_DIR_OPTION=""
+    if [[ -n "$DRM_MODE_CUSTOM_DIR" && -d "$DRM_MODE_CUSTOM_DIR" ]]; then
+        if gamescope_has_option "--generate-drm-mode-custom-dir"; then
+            DRM_MODE="custom"
+            DRM_MODE_CUSTOM_DIR_OPTION="--generate-drm-mode-custom-dir $DRM_MODE_CUSTOM_DIR"
+        else
+            DRM_MODE="fixed"
+            DRM_MODE_CUSTOM_DIR_OPTION=""
+        fi
+    fi
+
     DRM_MODE_OPTION=""
     if [ -n "$DRM_MODE" ] ; then
         DRM_MODE_OPTION="--generate-drm-mode $DRM_MODE"
@@ -308,17 +319,6 @@ if [ -z "$GAMESCOPECMD" ] ; then
     TOUCH_GESTURES_OPTION=""
     if [ -n "$GAMESCOPE_TOUCH_GESTURES" ] && gamescope_has_option "--touch-gestures"; then
         TOUCH_GESTURES_OPTION="--touch-gestures"
-    fi
-
-    DRM_MODE_CUSTOM_DIR_OPTION=""
-    if [[ -n "$DRM_MODE_CUSTOM_DIR" && -d "$DRM_MODE_CUSTOM_DIR" ]]; then
-        if gamescope_has_option "--generate-drm-mode-custom-dir"; then
-            DRM_MODE="custom"
-            DRM_MODE_CUSTOM_DIR_OPTION="--generate-drm-mode-custom-dir $DRM_MODE_CUSTOM_DIR"
-        else
-            DRM_MODE="fixed"
-            DRM_MODE_CUSTOM_DIR_OPTION=""
-        fi
     fi
     
   HDR_OPTIONS=""
