@@ -409,37 +409,21 @@ if [[ "$short_session_count" -ge "$short_session_count_before_reset" ]]; then
     exit 1
 fi
 
-# Log rotate the last session
-if [ -f "${HOME}"/.${CLIENT}-stdout.log ]; then
-    cp "${HOME}"/.${CLIENT}-stdout.log "${HOME}"/.${CLIENT}-stdout.log.old
-fi
-if [ -f "${HOME}"/.gamescope-stdout.log ]; then
-    cp "${HOME}"/.gamescope-stdout.log "${HOME}"/.gamescope-stdout.log.old
-fi
-if [ -f "${HOME}"/.gamescope-cmd.log ]; then
-    cp "${HOME}"/.gamescope-cmd.log "${HOME}"/.gamescope-cmd.log.old
-fi
-
-# renice log
-if [ -f "${HOME}"/.renice-steam.log ]; then
-    cp "${HOME}"/.renice-steam.log "${HOME}"/.renice-steam.log.old
-fi
-
-before_client_start >>"${HOME}"/.gamescope-stdout.log 2>&1
+before_client_start
 
 # Start gamescope compositor, log it's output and background it
 echo $GAMESCOPECMD >"${HOME}"/.gamescope-cmd.log
-$GAMESCOPECMD >"${HOME}"/.gamescope-stdout.log 2>&1 &
+$GAMESCOPECMD &
 gamescope_pid="$!"
 
 # auto pkill to retry gamescope
 while true; do
     if [[ "$SECONDS" -lt "$gamescope_retry_duration" ]]; then
-        echo ">>>>> SECONDS[$SECONDS], pidof gamescope [$(pidof gamescope 2>/dev/null)]" >>"${HOME}/.gamescope-stdout.log"
+        echo ">>>>> SECONDS[$SECONDS], pidof gamescope [$(pidof gamescope 2>/dev/null)]"
     fi
     if [[ "$SECONDS" -gt "$gamescope_retry_duration" ]]; then 
         if [[ -z "$(pidof steam 2>/dev/null)" && -z "$(pidof opengamepadui 2>/dev/null)" ]]; then
-            echo ">>>>>> pkill gamescope" >>"${HOME}/.gamescope-stdout.log"
+            echo ">>>>>> pkill gamescope"
             pkill -HUP gamescope
         else
             break
@@ -494,16 +478,16 @@ if [ -n "$STEAMCMD" ]; then
 fi
 
 # Start client application
-$CLIENTCMD > "${HOME}/.${CLIENT}-stdout.log" 2>&1 &
+$CLIENTCMD &
 
 # auto pkill to retry session
 while true; do
     if [[ "$SECONDS" -lt "$session_retry_duration" ]]; then
-        echo ">>>>> SECONDS[$SECONDS], pidof steam [$(pidof steam 2>/dev/null)], pidof opengamepadui [$(pidof opengamepadui 2>/dev/null)]" >>"${HOME}/.${CLIENT}-stdout.log"
+        echo ">>>>> SECONDS[$SECONDS], pidof steam [$(pidof steam 2>/dev/null)], pidof opengamepadui [$(pidof opengamepadui 2>/dev/null)]"
     fi
     if [[ "$SECONDS" -gt "$session_retry_duration" ]]; then 
         if [[ -z "$(pidof steam 2>/dev/null)" && -z "$(pidof opengamepadui 2>/dev/null)" ]]; then
-            echo ">>>>>> pkill gamescope and steam" >>"${HOME}/.${CLIENT}-stdout.log"
+            echo ">>>>>> pkill gamescope and steam"
             pkill -HUP gamescope && pkill -HUP steam
         else
             break
@@ -517,7 +501,7 @@ if [[ "$CLIENTCMD" =~ "steam" ]]; then
         sleep 1
     fi
     sleep 10
-    pkexec /usr/libexec/renice-steam > "${HOME}"/.renice-steam.log 2>&1
+    pkexec /usr/libexec/renice-steam
 fi
 
 # Wait for exit
@@ -536,8 +520,6 @@ post_client_shutdown
 # When the client exits, kill gamescope nicely
 kill $gamescope_pid
 
-echo ">>>> 1 after kill $gamescope_pid" >> "${HOME}/.${CLIENT}-stdout.log"
-
 # Start a background sleep for five seconds because we don't trust it
 sleep 5 &
 sleep_pid="$!"
@@ -555,8 +537,6 @@ if [[ -e "$SHUTDOWN_SENTINEL" ]]; then
     rm "$short_session_tracker_file"
     poweroff
 fi
-
-echo ">>>> 2 after kill $gamescope_pid" >> "${HOME}/.${CLIENT}-stdout.log"
 
 # Wait for gamescope or the sleep to finish for timeout purposes
 ret=0
@@ -580,6 +560,3 @@ for job in $(jobs -p); do
     fi
     kill -9 "$job"
 done
-
-
-echo ">>>> 3 end" >> "${HOME}/.${CLIENT}-stdout.log"
