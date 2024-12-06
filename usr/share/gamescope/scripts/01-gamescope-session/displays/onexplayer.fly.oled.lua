@@ -9,7 +9,7 @@ gamescope.config.known_displays.onexplayer_fly_oled = {
         eotf = gamescope.eotf.gamma22,
         max_content_light_level = 700,
         max_frame_average_luminance = 400,
-        min_content_light_level = 0.5
+        min_content_light_level = 0
     },
     dynamic_modegen = function(base_mode, refresh)
         debug("Generating mode "..refresh.."Hz for OneXPlayer Fly OLED")
@@ -38,7 +38,7 @@ gamescope.config.known_displays.onexplayer_fly_oled = {
         for index, value in ipairs(lcd_types) do
             if value.vendor == display.vendor and value.model == display.model then
                 debug("[onexplayer_fly_oled] Matched vendor: "..value.vendor.." model: "..value.model)
-                return 5000
+                return 5100
             end
         end
 
