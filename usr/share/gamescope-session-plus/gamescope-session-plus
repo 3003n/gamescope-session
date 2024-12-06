@@ -483,6 +483,11 @@ if [[ ":Galileo:" =~ ":$SYS_ID:"  ]]; then
   fi
 fi
 
+# Decky Loader daemon
+if [ -f /usr/libexec/decky-daemon ]; then
+    pkexec /usr/libexec/decky-daemon &
+fi
+
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then
     CLIENTCMD=$STEAMCMD
