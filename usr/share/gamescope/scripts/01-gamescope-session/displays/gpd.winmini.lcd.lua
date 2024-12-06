@@ -1,10 +1,5 @@
 local winmini_lcd_refresh_rates = {
-    60,
-    80,
-    90,
-    100,
-    110,
-    120
+    60, 80, 90, 100, 110, 120
 }
 
 local modelines = {
@@ -81,9 +76,7 @@ gamescope.config.known_displays.gpd_winmini2023_lcd = {
     dynamic_refresh_rates = winmini_lcd_refresh_rates,
 
     dynamic_modegen = function(base_mode, refresh)
-        info("Generating mode " .. refresh .. "Hz for GPD Win Mini 2023 with fixed pixel clock")
-        info("base_mode: " .. inspect(base_mode))
-
+        debug("Generating mode " .. refresh .. "Hz for GPD Win Mini 2023")
         local modeline = modelines[refresh]
         if modeline == nil then
             warn("Couldn't do refresh " .. refresh .. " on GPD Win Mini")
@@ -107,12 +100,11 @@ gamescope.config.known_displays.gpd_winmini2023_lcd = {
         mode.clock = gamescope.modegen.calc_max_clock(mode, refresh)
         mode.vrefresh = gamescope.modegen.calc_vrefresh(mode)
 
-        info("mode: " .. inspect(mode))
-        return base_mode
+        -- debug("mode: " .. inspect(mode))
+        return mode
     end,
 
     matches = function(display)
-        info("[TEST] vendor: " .. display.vendor .. " model: " .. display.model .. " product:" .. display.product)
         if display.vendor == "GPD" and display.model == "MINI" then
             debug(
                 "[gpd_winmini2023_lcd] Matched vendor: " ..
@@ -123,5 +115,5 @@ gamescope.config.known_displays.gpd_winmini2023_lcd = {
         return -1
     end
 }
-info("Registered GPD Win Mini 2023 as a known display")
-info(inspect(gamescope.config.known_displays.gpd_winmini2023_lcd))
+debug("Registered GPD Win Mini 2023 as a known display")
+-- debug(inspect(gamescope.config.known_displays.gpd_winmini2023_lcd))

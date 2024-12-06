@@ -21,7 +21,6 @@ gamescope.config.known_displays.ayaneo_airplus_lcd = {
 
     dynamic_modegen = function(base_mode, refresh)
         info("Generating mode " .. refresh .. "Hz for AYANEO AIR Plus/SLIDE with fixed pixel clock")
-        info("base_mode: " .. inspect(base_mode))
 
         local mode = base_mode
 
@@ -34,8 +33,8 @@ gamescope.config.known_displays.ayaneo_airplus_lcd = {
         mode.clock = gamescope.modegen.calc_max_clock(mode, refresh)
         mode.vrefresh = gamescope.modegen.calc_vrefresh(mode)
 
-        info("mode: " .. inspect(mode))
-        return base_mode
+        -- debug("mode: " .. inspect(mode))
+        return mode
     end,
 
     matches = function(display)
@@ -56,5 +55,5 @@ gamescope.config.known_displays.ayaneo_airplus_lcd = {
         return -1
     end
 }
-info("Registered AYANEO AIR Plus/SLIDE as a known display")
-info(inspect(gamescope.config.known_displays.ayaneo_airplus_lcd))
+debug("Registered AYANEO AIR Plus/SLIDE as a known display")
+-- debug(inspect(gamescope.config.known_displays.ayaneo_airplus_lcd))
