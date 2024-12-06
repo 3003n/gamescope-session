@@ -37,6 +37,17 @@ if [[ ":$OXP_120_LIST:" =~ ":$SYS_ID:"  ]]; then
   export STEAM_DISPLAY_REFRESH_LIMITS=40,120
 fi
 
+# OXP Fly
+if [[ "$SYS_ID" =~ "ONEXPLAYER F1" ]]; then
+  # PANEL_TYPE=external
+  ORIENTATION=left
+  DRM_MODE=custom
+  DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
+
+  # Set refresh rate range and enable refresh rate switching
+  export STEAM_DISPLAY_REFRESH_LIMITS=40,120
+fi
+
 # OXP X1 Devices
 OXP_X1_LIST="ONEXPLAYER X1 A"
 if [[ ":$OXP_X1_LIST:" =~ ":$SYS_ID:"  ]]; then
