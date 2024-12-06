@@ -77,7 +77,9 @@ AIR_LIST="AIR:AIR Pro:AIR Plus:SLIDE:AIR 1S:AIR 1S Limited"
 if [[ ":$AIR_LIST:" =~ ":$SYS_ID:"  ]]; then
   # PANEL_TYPE=external
   ORIENTATION=left
-  CUSTOM_REFRESH_RATES=50-60
+  if lua_not_exists "ayaneo.airplus.lcd.lua"; then
+      CUSTOM_REFRESH_RATES=40-60
+  fi
 fi
 
 # AYANEO FLIP Dual Screen
