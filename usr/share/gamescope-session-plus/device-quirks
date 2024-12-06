@@ -128,14 +128,29 @@ fi
 # GPD Win mini
 if [[ ":G1617-01:" =~ ":$SYS_ID:"  ]]; then
   # ORIENTATION=""
-  if ( xrandr --prop 2>$1 | grep -e "1080x1920 " > /dev/null ) ; then
+  # if ( xrandr --prop 2>$1 | grep -e "1080x1920 " > /dev/null ) ; then
+  #   ORIENTATION=right
+  #   DRM_MODE=custom
+  #   DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
+  # else
+  #   CUSTOM_REFRESH_RATES=60,70,80,90,100,110,120
+  #   ORIENTATION=normal
+  # fi
+  
+  model_name=$(cat /sys/class/drm/card*-eDP-1/edid | parse-edid 2>/dev/null | grep "ModelName" | cut -d \" -f 2 | sed 's/[^a-zA-Z0-9_-]//g')
+  echo "Model Name: $model_name" | systemd-cat -t gamescope-session
+
+  # xrandr --prop 2>$1 | grep -e "1080x1920 " > /dev/null
+  if [[ "$model_name" == "MINI" ]] || ( xrandr --prop 2>$1 | grep -e "1080x1920 " > /dev/null ) ; then
+    # model_name is "MINI"
     ORIENTATION=right
     DRM_MODE=custom
     DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
   else
-    CUSTOM_REFRESH_RATES=60,70,80,90,100,110,120
-    DRM_MODE=custom
-    DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
+    # model_name is "TL070FVXS01-0"
+    ADAPTIVE_SYNC=1
+    ORIENTATION=normal
+    CUSTOM_REFRESH_RATES="60,70,80,90,100,110,120"
   fi
 
   # Pointer options
