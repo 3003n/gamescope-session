@@ -1,16 +1,25 @@
 # This file will be sourced by gamescope-session script if not
 # overridden in ~/.config/environment.d
 
+# grep -H . /sys/class/drm/card*-*/status | grep :connected
+
+# This file would be sourced by gamescope-session script (meant for
+# ChimeraOS devices).
+export LANG=en_US.UTF-8
+SYS_ID="$(cat /sys/class/dmi/id/product_name)"
+CPU_VENDOR=$(cat /proc/cpuinfo | grep vendor_id | head -n 1 | cut -d : -f 2 | xargs)
+CPU_MODEL=$(cat /proc/cpuinfo | grep "model name" | head -n 1 | cut -d : -f 2 | xargs)
 SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
 CPU_VENDOR="$(lscpu | grep "Vendor ID" | cut -d : -f 2 | xargs)"
 
 # OXP 60Hz Devices
 OXP_LIST="ONE XPLAYER:ONEXPLAYER 1 T08:ONEXPLAYER 1S A08:ONEXPLAYER 1S T08:ONEXPLAYER mini A07:ONEXPLAYER mini GA72:ONEXPLAYER mini GT72:ONEXPLAYER Mini Pro:ONEXPLAYER GUNDAM GA72:ONEXPLAYER 2 ARP23:ONEXPLAYER 2 PRO ARP23H:ONEXPLAYER 2 PRO ARP23P:ONEXPLAYER 2 PRO ARP23P EVA-01"
-AOK_LIST="AOKZOE A1 AR07:AOKZOE A1 Pro"
+AOK_LIST="AOKZOE A1 AR07:AOKZOE A1 Pro:AOKZOE A2 Pro"
 if [[ ":$OXP_LIST:" =~ ":$SYS_ID:"  ]] || [[  ":$AOK_LIST:" =~ ":$SYS_ID:"   ]]; then
   DRM_MODE=fixed
-  PANEL_TYPE=external
+  # PANEL_TYPE=external
   ORIENTATION=left
+  CUSTOM_REFRESH_RATES=40-60
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=40,60
@@ -19,8 +28,10 @@ fi
 # OXP 120Hz Devices
 OXP_120_LIST="ONEXPLAYER F1:ONEXPLAYER F1 EVA-01"
 if [[ ":$OXP_120_LIST:" =~ ":$SYS_ID:"  ]]; then
-  PANEL_TYPE=external
+  # PANEL_TYPE=external
   ORIENTATION=left
+  DRM_MODE=custom
+  DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=40,120
@@ -48,18 +59,24 @@ if [[ ":$OXP_X1_144_LIST:" =~ ":$SYS_ID:"  ]]; then
   export STEAM_DISPLAY_REFRESH_LIMITS=60,144
 fi
 
-# AYANEO AIR, SLIDE, and FLIP Keyboard Devices
-AIR_LIST="AIR:AIR Pro:AIR Plus:SLIDE:FLIP KB:"
+# AYANEO AIR, SLIDE Devices
+AIR_LIST="AIR:AIR Pro:AIR Plus:SLIDE:AIR 1S:AIR 1S Limited"
 if [[ ":$AIR_LIST:" =~ ":$SYS_ID:"  ]]; then
-  PANEL_TYPE=external
+  # PANEL_TYPE=external
   ORIENTATION=left
+  CUSTOM_REFRESH_RATES=50-60
 fi
 
 # AYANEO FLIP Dual Screen
 if [[ ":FLIP DS:" =~ ":$SYS_ID:" ]]; then
-  PANEL_TYPE=external
+  # PANEL_TYPE=external
   ORIENTATION=left
   OUTPUT_CONNECTOR='*,eDP-1,eDP-2' # prefer the top screen
+fi
+
+# AYANEO FLIP KB
+if [[ ":FLIP KB:" =~ ":$SYS_ID:" ]]; then
+  ORIENTATION=left
 fi
 
 # AYN Loki Devices
@@ -67,7 +84,7 @@ AYN_LIST="Loki Max:Loki Zero:Loki MiniPro"
 if [[ ":$AYN_LIST:" =~ ":$SYS_ID:"  ]]; then
   DRM_MODE=fixed
   ORIENTATION=left
-  CUSTOM_REFRESH_RATES=40,50,60
+  CUSTOM_REFRESH_RATES=40-60
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=40,60
@@ -92,22 +109,40 @@ fi
 
 #GPD Win 4 supports 40-60hz refresh rate changing
 if [[ ":G1618-04:" =~ ":$SYS_ID:"  ]]; then
-  CUSTOM_REFRESH_RATES=40,60
+  CUSTOM_REFRESH_RATES=40-60
   export STEAM_DISPLAY_REFRESH_LIMITS=40,60
 fi
 
 # GPD Win Max 2 supports 40,60hz
 if [[ ":G1619-04:" =~ ":$SYS_ID:"  ]]; then
-  CUSTOM_REFRESH_RATES=40,60
+  CUSTOM_REFRESH_RATES=40-60
   export STEAM_DISPLAY_REFRESH_LIMITS=40,60
+
+  # Pointer options
+  GAMESCOPE_TAP_TO_CLICK=1
+  # GAMESCOPE_TAP_AND_DRAG=1
+  GAMESCOPE_TAP_DRAG_LOCK=1
+  GAMESCOPE_NATURAL_SCROLL=touchpad
 fi
 
 # GPD Win mini
 if [[ ":G1617-01:" =~ ":$SYS_ID:"  ]]; then
-  ORIENTATION=""
+  # ORIENTATION=""
   if ( xrandr --prop 2>$1 | grep -e "1080x1920 " > /dev/null ) ; then
-     ORIENTATION=right
+    ORIENTATION=right
+    DRM_MODE=custom
+    DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
+  else
+    CUSTOM_REFRESH_RATES=60,70,80,90,100,110,120
+    DRM_MODE=custom
+    DRM_MODE_CUSTOM_DIR=/usr/share/gamescope-session-plus/modelines
   fi
+
+  # Pointer options
+  GAMESCOPE_TAP_TO_CLICK=1
+  # GAMESCOPE_TAP_AND_DRAG=1
+  GAMESCOPE_TAP_DRAG_LOCK=1
+  GAMESCOPE_NATURAL_SCROLL=touchpad
 fi
 
 # Steam Deck (Common)
@@ -165,8 +200,9 @@ fi
 # ROG Ally & ROG Ally X
 ALLY_LIST="ROG Ally RC71L_RC71L:ROG Ally RC71L:ROG Ally X RC72LA"
 if [[ ":$ALLY_LIST:" =~ ":$SYS_ID:"  ]]; then
-  PANEL_TYPE=external
+  # PANEL_TYPE=external
   ADAPTIVE_SYNC=1
+  CUSTOM_REFRESH_RATES=60,70,80,90,100,110,120
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=40,120
@@ -175,7 +211,7 @@ fi
 # Lenovo Legion Go
 if [[ ":83E1:" =~ ":$SYS_ID:"  ]]; then
   ORIENTATION=left
-  CUSTOM_REFRESH_RATES=60,144
+  CUSTOM_REFRESH_RATES=60,90,144
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=60,144
@@ -183,8 +219,16 @@ fi
 
 # Minisforum V3
 if [[ ":V3:" =~ ":$SYS_ID:"  ]]; then
-  PANEL_TYPE=external
+  # PANEL_TYPE=external
   ADAPTIVE_SYNC=1
+  CUSTOM_REFRESH_RATES=60,90,100,120,144,165
+
+  # Pointer options
+  GAMESCOPE_TAP_TO_CLICK=1
+  # GAMESCOPE_TAP_AND_DRAG=1
+  GAMESCOPE_TAP_DRAG_LOCK=1
+  GAMESCOPE_NATURAL_SCROLL=touchpad
+  GAMESCOPE_TOUCH_GESTURES=1
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=36,165
