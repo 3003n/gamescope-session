@@ -9,8 +9,8 @@ export LANG=en_US.UTF-8
 SYS_ID="$(cat /sys/class/dmi/id/product_name)"
 CPU_VENDOR=$(cat /proc/cpuinfo | grep vendor_id | head -n 1 | cut -d : -f 2 | xargs)
 CPU_MODEL=$(cat /proc/cpuinfo | grep "model name" | head -n 1 | cut -d : -f 2 | xargs)
-SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
-CPU_VENDOR="$(lscpu | grep "Vendor ID" | cut -d : -f 2 | xargs)"
+# SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
+# CPU_VENDOR="$(lscpu | grep "Vendor ID" | cut -d : -f 2 | xargs)"
 
 SCRIPTS_DIR="/usr/share/gamescope/scripts/"
 
@@ -70,6 +70,11 @@ if [[ ":$OXP_X1_144_LIST:" =~ ":$SYS_ID:"  ]]; then
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=60,144
+fi
+
+# other OXP devices
+if [[ "$SYS_ID" =~ "ONEXPLAYER" && -z "$ORIENTATION" ]]; then
+  ORIENTATION=left
 fi
 
 # AYANEO AIR, SLIDE Devices
