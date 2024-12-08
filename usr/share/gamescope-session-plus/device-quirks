@@ -104,8 +104,18 @@ AIR_LIST="AIR:AIR Pro:AIR Plus:SLIDE:AIR 1S:AIR 1S Limited"
 if [[ ":$AIR_LIST:" =~ ":$SYS_ID:"  ]]; then
   # PANEL_TYPE=external
   ORIENTATION=left
+  CUSTOM_REFRESH_RATES=40-60
+fi
+
+# AYANEO AIR Plus, SLIDE Devices
+AIR_PLUS_LIST="AIR Plus:SLIDE"
+if [[ ":$AIR_PLUS_LIST:" =~ ":$SYS_ID:"  ]]; then
+  # PANEL_TYPE=external
+  ORIENTATION=left
   if lua_not_exists "ayaneo.airplus.lcd.lua"; then
       CUSTOM_REFRESH_RATES=40-60
+  else
+      unset CUSTOM_REFRESH_RATES
   fi
 fi
 
