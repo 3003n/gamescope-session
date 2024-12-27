@@ -85,13 +85,17 @@ if [[ ":$OXP_X1_144_LIST:" =~ ":$SYS_ID:"  ]]; then
 fi
 
 # OXP oled Devices
-OXP_OLED_LIST="ONEXPLAYER F1 OLED:ONEXPLAYER F1 EVA-02"
+OXP_OLED_LIST="ONEXPLAYER F1 EVA-02:ONEXPLAYER F1Pro"
 if [[ ":$OXP_OLED_LIST:" =~ ":$SYS_ID:"  ]]; then
   ORIENTATION=left
 
   export STEAM_GAMESCOPE_FORCE_HDR_DEFAULT=1
   export STEAM_GAMESCOPE_FORCE_OUTPUT_TO_HDR10PQ_DEFAULT=1
-  export STEAM_ENABLE_STATUS_LED_BRIGHTNESS=1
+  
+  # Maybe we should use galileo for oxp too
+  if [ -f "/usr/share/plymouth/themes/steamos/steamos-galileo.png" ]; then
+    export STEAM_UPDATEUI_PNG_BACKGROUND=/usr/share/plymouth/themes/steamos/steamos-galileo.png
+  fi
 fi
 
 # other OXP devices
