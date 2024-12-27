@@ -311,3 +311,15 @@ if [[ ":V3:" =~ ":$SYS_ID:"  ]]; then
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=36,165
 fi
+
+
+# ZOTAC Devices
+ZOTAC_LIST="ZOTAC GAMING ZONE"
+if [[ ":$ZOTAC_LIST:" =~ ":$SYS_ID:"  ]]; then
+  PANEL_TYPE=external
+  ORIENTATION=left
+  CUSTOM_REFRESH_RATES=60,90,120
+
+  # Set refresh rate range and enable refresh rate switching
+  export STEAM_DISPLAY_REFRESH_LIMITS=60,120
+fi
