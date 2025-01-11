@@ -66,7 +66,7 @@ gamescope.config.known_displays.gpd_winmini2023_lcd = {
                 "[gpd_winmini2023_lcd] Matched vendor: " ..
                     display.vendor .. " model: " .. display.model .. " product:" .. display.product
             )
-            return 5000
+            return 4000
         end
         return -1
     end

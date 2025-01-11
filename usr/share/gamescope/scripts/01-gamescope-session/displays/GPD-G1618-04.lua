@@ -49,7 +49,7 @@ gamescope.config.known_displays.gpd_win4_lcd = {
         for index, value in ipairs(lcd_types) do
             if value.vendor == display.vendor and value.model == display.model then
                 debug("[gpd_win4_lcd] Matched vendor: "..value.vendor.." model: "..value.model)
-                return 5000
+                return 4000
             end
         end
 

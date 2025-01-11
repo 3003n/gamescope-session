@@ -1,3 +1,5 @@
+-- OneXPlayer Fly OLED
+
 gamescope.config.known_displays.onexplayer_fly_oled = {
     pretty_name = "OneXPlayer Fly OLED",
     dynamic_refresh_rates = {
