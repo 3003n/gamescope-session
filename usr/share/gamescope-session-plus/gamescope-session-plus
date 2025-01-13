@@ -26,6 +26,15 @@ before_client_start() {
     if [ $(command -v sk-fix-games) ]; then
         sk-fix-games || true
     fi
+    audio_fix &
+}
+
+audio_fix() {
+    if [ -x "$(command -v sk-audio-setup)" ]; then
+        sleep 10
+        echo ">>>>>>>>>>>>>>>>>>>>>>> Running sk-audio-setup"
+        sk-audio-setup
+    fi
 }
 
 get_gamescope_binary() {
